@@ -43,7 +43,7 @@ public class QuestionService {
     }
 
     public ResponseEntity<List<Integer>> getQuestionsForQuiz(String categoryName, Integer numQuestions) {
-        List<Integer> questions = questionDao.findRandomQuestionsByCategory(categoryName, numQuestions);
+        List<Integer> questions = questionDao.findRandomQuestionsByCategory(categoryName);
         return new ResponseEntity<>(questions, HttpStatus.OK);
     }
 
