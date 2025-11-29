@@ -12,6 +12,8 @@ import com.example.quiz.model.QuestionWrapper;
 import com.example.quiz.model.Quiz;
 import com.example.quiz.model.Response;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -24,7 +26,8 @@ public class QuizService {
 
     @Autowired
     QuizInterface quizInterface;
-
+    
+    @CircuitBreaker(name = "questionServiceBreaker", fallbackMethod = "createQuizFallback")
     public ResponseEntity<String> createQuiz(String category, int numQ, String title) {
 
         List<Integer> questions = quizInterface.getQuestionsForQuiz(category, numQ).getBody();
@@ -48,5 +51,18 @@ public class QuizService {
     public ResponseEntity<Integer> calculateResult(Integer id, List<Response> responses) {
         ResponseEntity<Integer> score = quizInterface.getScore(responses);
         return score;
+    }
+    
+    public ResponseEntity<String> createQuizFallback(String category, int numQ, String title, Throwable t) {
+        System.out.println("Question Service is down");
+        System.out.println("Error: " + t.getMessage());
+        
+        // created quiz without questions, wll be added later
+        Quiz quiz = new Quiz();
+        quiz.setTitle(title);
+        quiz.setQuestionIds(new ArrayList<>()); 
+        quizDao.save(quiz);
+
+        return new ResponseEntity<>("Quiz created but questions are pending due to service error.", HttpStatus.OK);
     }
 }
